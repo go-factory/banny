@@ -2,11 +2,11 @@ package banny
 
 import (
 	"image/color"
+	"image"
 	"net"
 	"log"
 	"strings"
 	"crypto/sha1"
-	"image"
 )
 
 type Banny struct {
@@ -18,7 +18,10 @@ type Banny struct {
 // Generate generates the identicon, default is .png.
 func (banny *Banny) Generate(width int) image.Image {
 	var data []byte = banny.getRowData()
-	bg, fg := banny.colors(data[0])
+	// fmt.Println("data:", data)
+	// Output:
+	// data: [25 245 123 220 244 141 97 121 185 57 61 203 122 18 94 255 2 172 106 178]
+	fg, bg := banny.colors(data[0])
 	palette := color.Palette{bg, fg}
 	img := image.NewPaletted(image.Rect(0, 0, width, width), palette)
 
@@ -33,24 +36,28 @@ func (banny *Banny) Generate(width int) image.Image {
 }
 
 func (banny *Banny) blocks(width int, data []byte) []image.Rectangle {
-	blockWidth, padding := width/(banny.Rows+1), width/(banny.Rows+1)/2
+	blockWidth := width / (banny.Rows + 1)
+	padding := blockWidth / 2
 	num := banny.Rows * (banny.Rows/2 + banny.Rows%2)
 	res := make([]image.Rectangle, 0, banny.Rows*banny.Rows)
 
 	for i := 0; i < num; i++ {
-
-		column := i / banny.Rows
-		row := i % banny.Rows
-
-		if !fill(row, column, data) {
+		if !banny.fill(i, data) {
 			continue
 		}
 
-		pt := image.Pt(padding+row*blockWidth, padding+column*blockWidth)
+		column := i / banny.Rows
+		row := i % banny.Rows
+		// fmt.Println("col and row:", column, row)
+		// Output:
+		// col and row: 0 0
+		// ...
+
+		pt := image.Pt(padding+column*blockWidth, padding+row*blockWidth)
 		rect := image.Rectangle{pt, image.Pt(pt.X+blockWidth, pt.Y+blockWidth)}
 		res = append(res, rect)
 
-		if column < banny.Rows/2+banny.Rows%2 {
+		if column < banny.Rows/2+banny.Rows%2-1 {
 			rect.Min.X = padding + (banny.Rows-column-1)*blockWidth
 			rect.Max.X = rect.Min.X + blockWidth
 			res = append(res, rect)
@@ -59,11 +66,13 @@ func (banny *Banny) blocks(width int, data []byte) []image.Rectangle {
 	return res
 }
 
-func fill(row, column int, data []byte) bool {
-	if data[row/len(data)]>>uint(column%len(data))&1 == 0 {
-		return true
+func (banny *Banny) fill(block int, data []byte) bool {
+	// NOTE: This method is quoted from sigil https://github.com/cupcake/sigil
+	// needed be replaced in the future!
+	if data[block/8]>>uint(8-((block%8)+1))&1 == 0 {
+		return false
 	}
-	return false
+	return true
 }
 
 // getRowData gets []byte which is hashed from ip address.
