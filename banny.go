@@ -7,6 +7,8 @@ import (
 	"log"
 	"strings"
 	"crypto/sha1"
+	"regexp"
+	"fmt"
 )
 
 type Banny struct {
@@ -16,8 +18,8 @@ type Banny struct {
 }
 
 // Generate generates the identicon, default is .png.
-func (banny *Banny) Generate(width int) image.Image {
-	var data []byte = banny.getRowData()
+func (banny *Banny) Generate(width int, s string) image.Image {
+	var data []byte = banny.getRowData(s)
 	// fmt.Println("data:", data)
 	// Output:
 	// data: [25 245 123 220 244 141 97 121 185 57 61 203 122 18 94 255 2 172 106 178]
@@ -75,21 +77,43 @@ func (banny *Banny) fill(block int, data []byte) bool {
 	return true
 }
 
-// getRowData gets []byte which is hashed from ip address.
-func (banny *Banny) getRowData() []byte {
-	conn, err := net.Dial("udp", "google.com:80")
-	if err != nil {
-		log.Fatal(err)
+// getRowData gets []byte which is hashed from ip address or email address.
+func (banny *Banny) getRowData(s string) []byte {
+	if b, _ := regexp.Match("^(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|[1-9])\\."+
+		"(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\."+
+		"(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\."+
+		"(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)$", []byte(s)); b {
+
+		fmt.Println("This is an ip address:", s)
+
+		// hash ip address
+		h := sha1.New()
+		h.Write([]byte(s))
+		return h.Sum(nil)
+	} else if b, _ := regexp.Match("^([a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+)$", []byte(s)); b {
+
+		fmt.Println("This is an email address:", s)
+
+		// hash email address
+		h := sha1.New()
+		h.Write([]byte(s))
+		return h.Sum(nil)
+	} else {
+		fmt.Println("Input is neither an ip address nor email address, use local ip address instead.")
+		conn, err := net.Dial("udp", "google.com:80")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer conn.Close()
+
+		// get ip like xxx.xxx.xxx.xxx
+		ip := strings.Split(conn.LocalAddr().String(), ":")[0]
+
+		// hash ip address
+		h := sha1.New()
+		h.Write([]byte(ip))
+		return h.Sum(nil)
 	}
-	defer conn.Close()
-
-	// get ip like xxx.xxx.xxx.xxx
-	ip := strings.Split(conn.LocalAddr().String(), ":")[0]
-
-	// hash ip address
-	h := sha1.New()
-	h.Write([]byte(ip))
-	return h.Sum(nil)
 }
 
 // colors sets the foreground and background of the identicon.
