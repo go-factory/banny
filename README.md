@@ -1,4 +1,4 @@
-# banny
+# banny ![](https://travis-ci.org/go-factory/banny.svg?branch=master)
 
 ![](https://github.com/go-factory/banny/blob/master/logo.png)
 
@@ -6,7 +6,7 @@
 banny is an identicon generator, here is an introduction about what is [identicon](https://en.wikipedia.org/wiki/Identicon).
 
 ## How to use?
-Get the project:
+Get this library:
 ```
 go get github.com/go-factory/banny
 ```
