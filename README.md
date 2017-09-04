@@ -10,7 +10,7 @@ Get this library:
 ```
 go get github.com/go-factory/banny
 ```
-Generate identicon, you can generate it in your own project directory just like this:
+Generate identicon, `support ip analysis and email analysis`, you can generate it in your own project directory just like this:
 ```golang
 fi, err := os.Create("logo.png")
 if err != nil {
@@ -18,10 +18,12 @@ if err != nil {
 }
 defer fi.Close()
 
-png.Encode(fi, banny.Config.Generate(240))
-```
+png.Encode(fi, banny.Config.Generate(240, ""))
+png.Encode(fi, banny.Config.Generate(240, "124.2.45.230"))
+png.Encode(fi, banny.Config.Generate(240, "zztcc@foxmail.com"))
 
-## What else needs to be done?
-- [ ] Support email convertion
-- [ ] Add color scheme
-- [ ] Customize identicon configuration(size, color etc.)
+Output:
+Input is neither an ip address nor email address, use local ip address instead.
+This is an ip address 124.2.45.230
+This is an email zztcc@foxmail.com
+```
